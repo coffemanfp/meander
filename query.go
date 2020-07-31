@@ -1,7 +1,7 @@
 package meander
 
 // APIKey Google API Key
-var APIKEY string
+var APIKey string
 
 // Place is the Google Place model representation.
 type Place struct {
