@@ -1,5 +1,8 @@
 package meander
 
+// APIKey Google API Key
+var APIKEY string
+
 // Place is the Google Place model representation.
 type Place struct {
 	*googleGeometry `json:"geometry"`
