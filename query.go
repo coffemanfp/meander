@@ -3,13 +3,18 @@ package meander
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 )
 
-// APIKey Google API Key
+// APIKey Google API Key.
 var APIKey string
 
+// Query is the user representation of a query to build recommendations.
 type Query struct {
 	Lat          float64
 	Lng          float64
@@ -42,6 +47,56 @@ func (q *Query) find(types string) (gR *googleResponse, err error) {
 	defer res.Body.Close()
 
 	err = json.NewDecoder(res.Body).Decode(&gR)
+	return
+}
+
+// Run runs the query concurrently, and returns the results.
+func (q *Query) Run() (results []interface{}) {
+	rand.Seed(time.Now().UnixNano())
+
+	var w sync.WaitGroup
+	var l sync.Mutex
+
+	places := make([]interface{}, len(q.Journey))
+
+	for i, typeJourney := range q.Journey {
+		w.Add(1)
+
+		go func(types string, i int) {
+			defer w.Done()
+
+			response, err := q.find(types)
+			if err != nil {
+				log.Println("Failed to find places:", err)
+				return
+			}
+
+			if len(response.Results) == 0 {
+				log.Println("No places found for", types)
+				return
+			}
+
+			for _, result := range response.Results {
+				for _, photo := range result.Photos {
+					photoURL := fmt.Sprintf(
+						"https://maps.googleapis.com/maps/api/place/photo?maxwidth=1000&photoreference=%s&key=%s",
+						photo.PhotoRef,
+						APIKey,
+					)
+
+					photo.URL = photoURL
+				}
+			}
+
+			randI := rand.Intn(len(response.Results))
+
+			l.Lock()
+			places[i] = response.Results[randI]
+			l.Unlock()
+		}(typeJourney, i)
+	}
+
+	w.Wait()
 	return
 }
 
