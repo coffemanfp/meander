@@ -46,7 +46,10 @@ func (q *Query) find(types string) (gR *googleResponse, err error) {
 	}
 	defer res.Body.Close()
 
-	err = json.NewDecoder(res.Body).Decode(&gR)
+	var response googleResponse
+
+	err = json.NewDecoder(res.Body).Decode(&response)
+	gR = &response
 	return
 }
 
@@ -97,24 +100,26 @@ func (q *Query) Run() (results []interface{}) {
 	}
 
 	w.Wait()
+
+	results = places
 	return
 }
 
 // Place is the Google Place model representation.
 type Place struct {
-	*googleGeometry `json:"geometry"`
-	Name            string         `json:"name"`
-	Icon            string         `json:"icon"`
-	Photos          []*googlePhoto `json:"photos"`
-	Vicinity        string         `json:"vicinity"`
+	Geometry *googleGeometry `json:"geometry"`
+	Name     string          `json:"name"`
+	Icon     string          `json:"icon"`
+	Photos   []*googlePhoto  `json:"photos"`
+	Vicinity string          `json:"vicinity"`
 }
 
 type googleResponse struct {
-	Results []*Place `json:"results"`
+	Results []Place `json:"results"`
 }
 
 type googleGeometry struct {
-	*googleLocation `json:"location"`
+	Location googleLocation `json:"location"`
 }
 
 type googleLocation struct {
@@ -123,7 +128,7 @@ type googleLocation struct {
 }
 
 type googlePhoto struct {
-	PhotoRef string `json:"photoRef"`
+	PhotoRef string `json:"photo_reference"`
 	URL      string `json:"url"`
 }
 
@@ -134,7 +139,7 @@ func (p *Place) Public() interface{} {
 		"icon":     p.Icon,
 		"photos":   p.Photos,
 		"vicinity": p.Vicinity,
-		"lat":      p.Lat,
-		"lng":      p.Lng,
+		"lat":      p.Geometry.Location.Lat,
+		"lng":      p.Geometry.Location.Lng,
 	}
 }
