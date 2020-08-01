@@ -20,9 +20,9 @@ func main() {
 
 	meander.APIKey = apiKey
 
-	http.HandleFunc("/journeys", getJourneys)
+	http.HandleFunc("/journeys", cors(getJourneys))
 
-	http.HandleFunc("/recommendations", getRecommendations)
+	http.HandleFunc("/recommendations", cors(getRecommendations))
 
 	fmt.Println("Starting on port 8080...")
 	http.ListenAndServe(":8080", http.DefaultServeMux)
